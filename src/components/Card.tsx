@@ -1,7 +1,7 @@
-import React, { ReactNode } from "react";
+import React, { ComponentProps, ReactNode } from "react";
 import clsx from "clsx";
 
-interface CardRootProps {
+interface CardRootProps extends ComponentProps<"div"> {
   children: ReactNode;
   className?: string;
 }
@@ -11,9 +11,9 @@ interface CardSectionProps {
   className?: string;
 }
 
-const Root = ({ children, className }: CardRootProps) => {
+const Root = ({ children, className, ...rest }: CardRootProps) => {
   return (
-    <div className={clsx("rounded-lg border shadow", className)}>
+    <div className={clsx("border bg-zinc-100 shadow", className)} {...rest}>
       {children}
     </div>
   );

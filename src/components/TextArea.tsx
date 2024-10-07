@@ -1,8 +1,11 @@
-import React, {
+import clsx from "clsx";
+import { LucideIcon } from "lucide-react";
+import {
+  ComponentProps,
   createContext,
-  useContext,
+  forwardRef,
   ReactNode,
-  TextareaHTMLAttributes,
+  useContext,
 } from "react";
 
 interface TextAreaContextProps {
@@ -15,13 +18,20 @@ const TextAreaContext = createContext<TextAreaContextProps | undefined>(
 
 interface TextAreaRootProps {
   children: ReactNode;
+  className?: string;
   errorMessage?: string;
 }
 
-export function TextAreaRoot({ children, errorMessage }: TextAreaRootProps) {
+export function TextAreaRoot({
+  children,
+  errorMessage,
+  className,
+}: TextAreaRootProps) {
   return (
     <TextAreaContext.Provider value={{ errorMessage }}>
-      <div className="mb-4 flex flex-col">{children}</div>
+      <div className={clsx("relative flex flex-col pb-4", className)}>
+        {children}
+      </div>
     </TextAreaContext.Provider>
   );
 }
@@ -32,23 +42,28 @@ interface TextAreaLabelProps {
 
 export function TextAreaLabel({ children }: TextAreaLabelProps) {
   return (
-    <label className="mb-1 text-sm font-medium text-gray-700">{children}</label>
+    <label className="mb-0.5 text-sm font-medium text-gray-700">
+      {children}
+    </label>
   );
 }
 
-interface TextAreaFieldProps
-  extends TextareaHTMLAttributes<HTMLTextAreaElement> {
-  icon?: ReactNode;
+interface TextAreaFieldProps extends ComponentProps<"textarea"> {
+  Icon?: LucideIcon;
 }
-
-export function TextAreaField({ icon, ...props }: TextAreaFieldProps) {
+export const TextAreaField = forwardRef<
+  HTMLTextAreaElement,
+  TextAreaFieldProps
+>(({ Icon, ...props }, ref) => {
   return (
-    <div className="flex items-center rounded-md border border-gray-300 focus-within:border-blue-500">
-      {icon && <span className="p-2">{icon}</span>}
-      <textarea className="flex-1 resize-none p-2 outline-none" {...props} />
+    <div className="flex items-center border border-gray-300 focus-within:border-blue-500">
+      {Icon && <Icon />}
+      <textarea ref={ref} className="flex-1 p-2 outline-none" {...props} />
     </div>
   );
-}
+});
+
+TextAreaField.displayName = "TextAreaField";
 
 export function TextAreaErrorMessage() {
   const context = useContext(TextAreaContext);
@@ -57,7 +72,9 @@ export function TextAreaErrorMessage() {
   }
 
   return context.errorMessage ? (
-    <span className="mt-1 text-xs text-red-500">{context.errorMessage}</span>
+    <span className="absolute bottom-0 w-full truncate text-xs text-red-500">
+      {context.errorMessage}
+    </span>
   ) : null;
 }
 

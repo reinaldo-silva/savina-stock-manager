@@ -2,6 +2,7 @@ import clsx from "clsx";
 import { X } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
+import { Card } from "./Card";
 
 interface ModalRootProps {
   isOpen: boolean;
@@ -52,13 +53,16 @@ const Overlay = ({
   onClose: () => void;
 }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}>
-      <div
-        className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-lg"
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+      onClick={onClose}
+    >
+      <Card.Root
+        className="relative w-full max-w-3xl p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
-      </div>
+      </Card.Root>
     </div>
   );
 };
@@ -68,20 +72,22 @@ const Content = ({ children, className }: ModalContentProps) => {
 };
 
 const Header = ({ children }: ModalHeaderProps) => {
-  return (
-    <div className="mb-4 border-b pb-3 text-lg font-semibold">{children}</div>
-  );
+  return <div className="mb-4 border-b pb-3">{children}</div>;
 };
 
 const Footer = ({ children }: ModalFooterProps) => {
-  return <div className="mt-4 border-t pt-3">{children}</div>;
+  return (
+    <div className="mt-4 flex gap-2 border-t border-zinc-300 pt-3">
+      {children}
+    </div>
+  );
 };
 
 const CloseButton = ({ onClose }: ModalCloseButtonProps) => {
   return (
     <button
       onClick={onClose}
-      className="absolute right-3 top-3 text-gray-600 hover:text-gray-900 focus:outline-none"
+      className="absolute right-4 top-4 text-gray-600 hover:text-gray-900 focus:outline-none"
     >
       <X />
     </button>
