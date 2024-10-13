@@ -1,6 +1,13 @@
+import { animated, useSpring } from "@react-spring/web";
 import clsx from "clsx";
 import { X } from "lucide-react";
-import { ReactNode, useEffect, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import ReactDOM from "react-dom";
 import { Card } from "./Card";
 
@@ -27,43 +34,95 @@ interface ModalCloseButtonProps {
   onClose: () => void;
 }
 
+interface ModalContextProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const ModalContext = createContext<ModalContextProps | null>(null);
+
+const useModalContext = () => {
+  const context = useContext(ModalContext);
+  if (!context) {
+    throw new Error("useModalContext must be used within a ModalProvider");
+  }
+  return context;
+};
+
 const Root = ({ isOpen, onClose, children }: ModalRootProps) => {
-  const [mounted, setMounted] = useState(false);
+  const [shouldRender, setShouldRender] = useState(isOpen);
 
   useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
+    if (isOpen) {
+      setShouldRender(true);
+    }
+  }, [isOpen]);
 
-  if (!mounted || !isOpen) return null;
+  const closeModal = () => {
+    onClose();
+    setTimeout(() => setShouldRender(false), 300);
+  };
+
+  if (!shouldRender) return null;
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <Overlay onClose={onClose}>{children}</Overlay>
-    </div>,
+    <ModalContext.Provider value={{ isOpen, onClose: closeModal }}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <Overlay>{children}</Overlay>
+      </div>
+    </ModalContext.Provider>,
     document.body,
   );
 };
 
-const Overlay = ({
-  children,
-  onClose,
-}: {
-  children: ReactNode;
-  onClose: () => void;
-}) => {
+const Overlay = ({ children }: { children: ReactNode }) => {
+  const { isOpen, onClose } = useModalContext();
+  useEscapeToClose(onClose);
+  const [currentAnimation, setCurrentAnimation] = useState(false);
+
+  const overlaySpring = useSpring({
+    opacity: currentAnimation ? 1 : 0,
+    config: { duration: 300 },
+  });
+
+  useEffect(() => {
+    setCurrentAnimation(!isOpen ? false : true);
+  }, [isOpen]);
+
   return (
-    <div
+    <animated.div
+      style={overlaySpring}
       className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
       onClick={onClose}
     >
-      <Card.Root
-        className="relative w-full max-w-3xl p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </Card.Root>
-    </div>
+      <CardComponent>{children}</CardComponent>
+    </animated.div>
+  );
+};
+
+const AnimatedCard = animated(Card.Root);
+
+const CardComponent = ({ children }: { children: ReactNode }) => {
+  const { isOpen } = useModalContext();
+  const [currentAnimation, setCurrentAnimation] = useState(false);
+  const cardSpring = useSpring({
+    opacity: currentAnimation ? 1 : 0,
+    transform: currentAnimation ? "scale(1)" : "scale(0.95)",
+    config: { duration: 300 },
+  });
+
+  useEffect(() => {
+    setCurrentAnimation(!isOpen ? false : true);
+  }, [isOpen]);
+
+  return (
+    <AnimatedCard
+      style={cardSpring}
+      className="relative w-full max-w-3xl p-6"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </AnimatedCard>
   );
 };
 
@@ -92,6 +151,20 @@ const CloseButton = ({ onClose }: ModalCloseButtonProps) => {
       <X />
     </button>
   );
+};
+
+const useEscapeToClose = (onClose: () => void) => {
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [onClose]);
 };
 
 export const Modal = {
